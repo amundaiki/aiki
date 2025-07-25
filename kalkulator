@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Besparelseskalkulator</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Eksisterende CSS */
+        body {
+            background-color: #f0f4f0;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        #kostnadsbesparingskalkulator {
+            max-width: 1000px;
+            margin: 40px auto;
+            color: #333;
+        }
+
+        .kalkulator-header {
+            background-color: #1f2e43;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .kalkulator-header h2 {
+            margin: 0;
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.5em;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .kalkulator-container {
+            background: #fff;
+            border-radius: 0 0 8px 8px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Oppdatert grid-layout for inputs */
+        .kalkulator-inputs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* To kolonner for mobil */
+            gap: 20px; /* Avstand mellom elementene */
+            margin-bottom: 30px;
+        }
+
+        /* Justering av input-feltene for å matche resultat-boksene */
+        .input-gruppe input {
+            width: 100%; /* Fyller hele bredden av input-gruppen */
+            padding: 12px;
+            border: 1px solid #E8E6FF; /* Lysere kantfarge */
+            border-radius: 8px; /* Runde hjørner for å matche resultat-boksene */
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-align: center; /* Sentrer teksten i input-feltet */
+            background: #F5F7FA; /* Lys bakgrunn for input-feltene */
+        }
+
+        /* Justering av input-gruppe */
+        .input-gruppe {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Juster innholdet til venstre */
+            width: 100%; /* Fyller hele bredden */
+        }
+
+        /* Justering av etiketter */
+        .input-gruppe label {
+            font-weight: 500;
+            margin-bottom: 5px; /* Mindre avstand mellom etikett og input-felt */
+            color: #1f2e43;
+            font-size: 0.95em;
+            text-align: left; /* Juster teksten til venstre */
+        }
+
+        .input-gruppe label i {
+            margin-right: 6px;
+            color: #0b3d91;
+        }
+
+        /* Justering av resultat-elementene */
+        .resultater-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* To kolonner for ROI og tilbakebetaling */
+            gap: 20px; /* Avstand mellom elementene */
+            width: 100%; /* Fyller hele bredden */
+        }
+
+        /* Justering av årlig besparelse */
+        .resultat-element.årlig-besparelse {
+            grid-column: span 2; /* Tar opp hele bredden */
+        }
+
+        .resultat-element {
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Sentrer innholdet vertikalt */
+            align-items: center; /* Sentrer innholdet horisontalt */
+            height: 100%; /* Fyller hele høyden av containeren */
+            background: #F5F7FA; /* Lys bakgrunn for resultatene */
+            border: 1px solid #E8E6FF; /* Lysere kantfarge */
+            border-radius: 8px; /* Runde hjørner */
+            padding: 20px; /* Legg til padding for bedre utseende */
+            transition: transform 0.3s, box-shadow 0.3s; /* Overgang for animasjon */
+            box-sizing: border-box; /* Inkluderer padding og border i total bredde */
+        }
+
+        .resultat-element:hover {
+            transform: scale(1.05);
+        }
+
+        .resultat-element p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* Sentrerte beløp */
+        .resultat-beløp {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #121A26; /* Endret til primær tekstfarge for synlighet */
+            margin-top: 10px;
+            text-align: center;
+            transition: all 0.5s ease; /* Legg til jevn overgang for beløp */
+        }
+
+        /* Responsiv design for mobil */
+        @media (max-width: 600px) {
+            .resultat-element {
+                padding: 15px; /* Mindre padding for mobil */
+                font-size: 0.9em; /* Juster tekststørrelse for mobil */
+            }
+
+            .resultater-container {
+                grid-template-columns: 1fr; /* En kolonne for mobil */
+            }
+
+            .input-gruppe {
+                margin-bottom: 15px; /* Avstand mellom input-grupper */
+            }
+        }
+
+        /* Responsiv design for PC */
+        @media (min-width: 600px) {
+            .kalkulator-inputs {
+                grid-template-columns: repeat(4, 1fr); /* Fire kolonner for PC */
+                grid-template-rows: repeat(2, auto); /* To rader */
+            }
+        }
+
+        /* Resten av CSS forblir uendret */
+        /* ... eksisterende CSS ... */
+
+        /* Ny CSS for slick design */
+        body {
+            font-family: 'Inter', sans-serif; /* Bruk Inter som brødtekst-font */
+            background-color: #F5F7FA; /* Bakgrunnsfarge */
+            color: #121A26; /* Primær tekstfarge */
+        }
+
+        #kostnadsbesparingskalkulator {
+            max-width: 1200px; /* Økt bredde på kalkulatoren */
+            margin: 40px auto;
+            color: #333;
+        }
+
+        .kalkulator-header {
+            background-color: #1F2E43; /* Hovedfarge for header */
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .kalkulator-header h2 {
+            color: #F5F7FA; /* Hvit tekstfarge for overskrift */
+            font-family: 'Poppins', sans-serif; /* Bruk Poppins for overskrifter */
+            font-size: 2.5em;
+        }
+
+        .resultater-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* To kolonner for ROI og tilbakebetaling */
+            gap: 20px; /* Avstand mellom elementene */
+        }
+
+        .resultat-element.roi,
+        .resultat-element.payback {
+            background: #F5F7FA; /* Bakgrunnsfarge for ROI og tilbakebetaling */
+            color: #121A26; /* Primær tekstfarge for synlighet */
+            border: 1px solid #E8E6FF; /* Lysere kantfarge */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Lysere skygge */
+            padding: 20px; /* Legg til padding for bedre utseende */
+            border-radius: 8px; /* Runde hjørner */
+            transition: transform 0.3s, box-shadow 0.3s; /* Overgang for animasjon */
+        }
+
+        .resultat-element.roi:hover,
+        .resultat-element.payback:hover {
+            transform: scale(1.05); /* Forstørrelse ved hover */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Dypere skygge ved hover */
+        }
+
+        #sendDataButton {
+            background-color: #006DFF; /* Aksentfarge for knappen */
+            color: #F5F7FA; /* Hvit tekstfarge */
+            border: none; /* Ingen kant */
+            border-radius: 4px; /* Runde hjørner */
+            padding: 12px 20px; /* Padding for knappen */
+            font-size: 16px; /* Størrelse på teksten */
+            cursor: pointer; /* Endre musepekeren til hånd */
+            transition: background-color 0.3s ease; /* Overgang for bakgrunnsfarge */
+        }
+
+        #sendDataButton:hover {
+            background-color: #0056b3; /* Mørkere aksentfarge ved hover */
+        }
+
+        .input-field {
+            flex: 1; /* Tar opp tilgjengelig plass */
+            margin-right: 10px; /* Avstand mellom feltene */
+        }
+
+        .email-field {
+            flex: 0 0 70%; /* E-postfeltet tar 70% av bredden */
+        }
+
+        .primary-button {
+            background-color: #006DFF; /* Farge for knappen */
+            color: white; /* Tekstfarge for knappen */
+            padding: 10px 15px; /* Padding for knappen */
+            border: none; /* Ingen kant */
+            border-radius: 4px; /* Runde hjørner */
+            cursor: pointer; /* Endre musepekeren til hånd */
+        }
+
+        /* Felles stil for input-feltene */
+        .kontakt-input {
+            width: 100%; /* Fyller hele bredden */
+            max-width: 400px; /* Juster denne verdien for å gjøre boksene lengre */
+            padding: 12px;
+            border: 1px solid #E8E6FF;
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: #F5F7FA;
+            margin-bottom: 10px;
+            text-align: left; /* Juster teksten til venstre */
+            transition: all 0.3s ease;
+        }
+
+        /* Hover og fokus-effekt */
+        .kontakt-input:focus,
+        .kontakt-input:hover {
+            border-color: #006DFF;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 109, 255, 0.2);
+        }
+
+        /* E-post og Send Data i samme linje */
+        .email-container {
+            display: flex;
+            flex-direction: column; /* Stabler elementene vertikalt */
+            align-items: stretch; /* Fyller bredden */
+            gap: 10px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        /* E-postfeltet tar 70 % av bredden */
+        .email-field {
+            flex: 0 0 70%;
+            text-align: left;
+            padding-left: 10px;
+            box-sizing: border-box; /* Sørger for at padding ikke påvirker bredden */
+        }
+
+        /* Send Data-knapp */
+        #sendDataButton {
+            flex: 1;
+            background-color: #006DFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-align: center;
+        }
+
+        /* Hover-effekt for knappen */
+        #sendDataButton:hover {
+            background-color: #0056b3;
+        }
+
+        /* Justering av kontaktseksjonen */
+        .contact-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        /* Justering av input-feltene for kontaktinformasjon */
+        .kontakt-input {
+            width: 100%; /* Fyller hele bredden */
+            max-width: 400px; /* Juster denne verdien for å gjøre boksene lengre */
+            padding: 12px;
+            border: 1px solid #E8E6FF;
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: #F5F7FA;
+            margin-bottom: 0; /* Ingen avstand mellom feltene */
+            text-align: left; /* Juster teksten til venstre */
+        }
+
+        /* E-post og Send Data i samme linje */
+        .email-container {
+            display: flex;
+            flex-direction: column; /* Stabler elementene vertikalt */
+            align-items: center; /* Sentrer innholdet horisontalt */
+            gap: 10px; /* Avstand mellom feltene */
+            max-width: 400px;
+            width: 100%;
+        }
+
+        /* Importer Poppins fra Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+
+        /* Generell stil for hele dokumentet */
+        body {
+            font-family: 'Poppins', sans-serif; /* Sett Poppins som standard font */
+            margin: 0; /* Fjern standard margin */
+            padding: 0; /* Fjern standard padding */
+        }
+
+        /* Kontaktseksjon */
+        .contact-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        /* Felles stil for input-feltene */
+        .kontakt-input {
+            width: 100%;
+            max-width: 400px; /* Juster denne verdien for å gjøre boksene lengre */
+            padding: 12px;
+            border: 1px solid #E8E6FF;
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: #F5F7FA;
+            margin-bottom: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        /* E-post og knapp i samme linje */
+        .email-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        /* E-postfeltet tar 70 % av bredden */
+        .email-field {
+            flex: 0 0 70%;
+            text-align: left;
+            padding-left: 10px;
+            box-sizing: border-box; /* Sørger for at padding ikke påvirker bredden */
+        }
+
+        /* Send Data-knapp */
+        #sendDataButton {
+            flex: 1; /* Tar opp resten av plassen */
+            background-color: #006DFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-align: center;
+        }
+
+        /* Hover-effekt for knappen */
+        #sendDataButton:hover {
+            background-color: #0056b3;
+        }
+
+        /* Hover og fokus-effekter */
+        .kontakt-input:focus,
+        .kontakt-input:hover {
+            border-color: #006DFF;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 109, 255, 0.2);
+        }
+
+        /* Responsiv design for mobil */
+        @media (max-width: 600px) {
+            .kontakt-input {
+                font-size: 14px; /* Mindre tekst for mobil */
+                padding: 10px; /* Mindre padding for mobil */
+            }
+
+            .email-container {
+                flex-direction: column; /* Stabler elementene vertikalt */
+                align-items: stretch; /* Fyller bredden */
+            }
+
+            .email-field {
+                flex: 1; /* Tar opp all tilgjengelig plass */
+                margin-bottom: 10px; /* Avstand mellom feltene */
+            }
+
+            #sendDataButton {
+                width: 100%; /* Fyller hele bredden */
+            }
+        }
+
+        .contact-section .input-gruppe {
+            gap: 10px;              /* 10px mellomrom mellom hvert felt */
+            align-items: center;    /* Sentrerer feltene horisontalt */
+        }
+
+        .contact-section .kontakt-input {
+            margin-bottom: 0;       /* Fjerner standard bunnmargin */
+        }
+    </style>
+</head>
+<body>
+    <div id="kostnadsbesparingskalkulator">
+        <div class="kalkulator-header">
+            <h2>Sjekk dine<br>AI-Besparelser</h2>
+        </div>
+        <div class="kalkulator-container">
+            <div class="kalkulator-inputs">
+                <div class="input-gruppe">
+                    <label for="dagligeTimerSpart">
+                        <i class="fas fa-clock"></i> Timer/dag
+                    </label>
+                    <input type="number" id="dagligeTimerSpart" value="1" min="0" step="0.1">
+                </div>
+                <div class="input-gruppe">
+                    <label for="ukentligeTimerSpart">
+                        <i class="fas fa-calendar-week"></i> Timer/uke
+                    </label>
+                    <input type="text" id="ukentligeTimerSpart" value="0" readonly style="background-color: #F5F7FA; border: none; color: #121A26; text-align: center;">
+                </div>
+                <div class="input-gruppe">
+                    <label for="ansatte">
+                        <i class="fas fa-users"></i> Ansatte
+                    </label>
+                    <input type="number" id="ansatte" value="1" min="1" step="1">
+                </div>
+                <div class="input-gruppe">
+                    <label for="månedslønn">
+                        <i class="fas fa-money-bill-alt"></i> Månedslønn
+                    </label>
+                    <input type="number" id="månedslønn" value="56360" min="0" step="100">
+                </div>
+                <div class="input-gruppe">
+                    <label for="ukentligeTimer">
+                        <i class="fas fa-business-time"></i> Timer/uke
+                    </label>
+                    <input type="number" id="ukentligeTimer" value="37.5" min="1" step="0.1">
+                </div>
+                <div class="input-gruppe">
+                    <label for="startKostnad">
+                        <i class="fas fa-money-bill-wave"></i> Investering
+                    </label>
+                    <input type="number" id="startKostnad" value="35000" min="0" step="1000">
+                </div>
+                <div class="input-gruppe">
+                    <label for="vedlikeholdKostnad">
+                        <i class="fas fa-tools"></i> Mnd. kostnad
+                    </label>
+                    <input type="number" id="vedlikeholdKostnad" value="3500" min="0" step="100">
+                </div>
+                <div class="input-gruppe">
+                    <label for="ovrigeBesparelser">
+                        <i class="fas fa-piggy-bank"></i> Øvrige besparelser
+                    </label>
+                    <input type="number" id="ovrigeBesparelser" value="0" min="0" step="1000">
+                </div>
+            </div>
+
+            <div class="kalkulator-resultater">
+                <h3>Potensielle besparelser og ROI</h3>
+                <div class="resultater-container">
+                    <div class="resultat-element">
+                        <p>Ukentlig besparelse</p>
+                        <div class="resultat-beløp" id="ukentligeBesparelser">NOK 0</div>
+                    </div>
+                    <div class="resultat-element">
+                        <p>Månedlig besparelse</p>
+                        <div class="resultat-beløp" id="månedligeBesparelser">NOK 0</div>
+                    </div>
+                    <div class="resultat-element årlig-besparelse">
+                        <p>Årlig besparelse</p>
+                        <div class="resultat-beløp" id="årligeBesparelser">NOK 0</div>
+                    </div>
+                    <div class="resultat-element roi">
+                        <p>ROI (Return on Investment)</p>
+                        <div class="resultat-beløp" id="roiResultat">0%</div>
+                    </div>
+                    <div class="resultat-element payback">
+                        <p>Tilbakebetalingstid</p>
+                        <div class="resultat-beløp" id="paybackPeriod">0 mnd</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-section">
+                <div class="input-gruppe" style="flex-direction: column; width: 100%; max-width: 400px;">
+                    <input type="text" id="kundeNavn" placeholder="Skriv inn navn" class="kontakt-input" required>
+                    <input type="text" id="bedriftsNavn" placeholder="Skriv inn bedriftsnavn" class="kontakt-input" required>
+                    <input type="email" id="kundeEmail" placeholder="Skriv inn e-post" class="kontakt-input email-field" required>
+                    <button id="sendDataButton" class="primary-button">Send Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Kjør beregning ved oppstart
+        calculate();
+
+        // Legg til event listeners på alle input-felt
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', calculate);
+            input.addEventListener('change', calculate);
+            input.addEventListener('keyup', calculate);
+        });
+
+        function animateValue(id, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const currentValue = Math.floor(progress * (end - start) + start);
+                document.getElementById(id).textContent = formatNOK(currentValue);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function calculate() {
+            // Hent alle verdier
+            const dagligeTimerSpart = parseFloat(document.getElementById('dagligeTimerSpart').value) || 0;
+            const ansatte = parseInt(document.getElementById('ansatte').value) || 0;
+            const månedslønn = parseFloat(document.getElementById('månedslønn').value) || 0;
+            const arbeidstimer = parseFloat(document.getElementById('ukentligeTimer').value) || 37.5;
+            const startKostnad = parseFloat(document.getElementById('startKostnad').value) || 0;
+            const vedlikeholdKostnad = parseFloat(document.getElementById('vedlikeholdKostnad').value) || 0;
+            const ovrigeBesparelser = parseFloat(document.getElementById('ovrigeBesparelser').value) || 0;
+
+            // Beregn timer spart per uke
+            const ukentligeTimerSpart = dagligeTimerSpart * 5 * ansatte; // Antall arbeidsdager per uke multiplisert med antall ansatte
+            document.getElementById('ukentligeTimerSpart').value = ukentligeTimerSpart.toFixed(1); // Oppdater visningsfeltet
+
+            // Sjekk om nødvendige verdier er fylt ut
+            if (dagligeTimerSpart < 0 || ansatte < 0 || månedslønn < 0 || startKostnad < 0) {
+                return;
+            }
+
+            // Beregn timelønn og brutto besparelser
+            const timelønn = (månedslønn * 12) / (arbeidstimer * 52);
+            const ukentligBesparelse = ukentligeTimerSpart * timelønn; // Brutto ukentlig besparelse
+            const månedligBesparelse = (ukentligBesparelse * 52) / 12; // Brutto månedlig besparelse
+            const årligBesparelse = månedligBesparelse * 12; // Brutto årlig besparelse
+
+            // Beregn netto besparelse
+            const vedlikeholdPerUke = vedlikeholdKostnad; // Anta at vedlikeholdskostnad er per måned
+            const nettoUkentligBesparelse = ukentligBesparelse - (vedlikeholdPerUke / 4); // Trekk fra vedlikehold per uke
+            const nettoMånedligBesparelse = månedligBesparelse - vedlikeholdKostnad; // Trekk fra vedlikehold per måned
+            const nettoÅrligBesparelse = årligBesparelse - (vedlikeholdKostnad * 12); // Trekk fra vedlikehold per år
+
+            // Beregn totale besparelser og ROI
+            const totaleÅrligeBesparelser = nettoÅrligBesparelse + ovrigeBesparelser; // Inkluder øvrige besparelser
+            const totaleÅrligeKostnader = startKostnad + (vedlikeholdKostnad * 12); // Inkluder vedlikeholdskostnader
+            const roi = totaleÅrligeKostnader > 0 ? 
+                ((totaleÅrligeBesparelser - totaleÅrligeKostnader) / totaleÅrligeKostnader) * 100 : 0;
+            const payback = totaleÅrligeBesparelser > 0 ? 
+                (startKostnad / totaleÅrligeBesparelser) * 12 : 0;
+
+            // Oppdater visning med animasjon
+            animateValue('ukentligeBesparelser', parseFloat(document.getElementById('ukentligeBesparelser').textContent.replace(/[^0-9.-]+/g,"")), nettoUkentligBesparelse, 500);
+            animateValue('månedligeBesparelser', parseFloat(document.getElementById('månedligeBesparelser').textContent.replace(/[^0-9.-]+/g,"")), nettoMånedligBesparelse, 500);
+            animateValue('årligeBesparelser', parseFloat(document.getElementById('årligeBesparelser').textContent.replace(/[^0-9.-]+/g,"")), nettoÅrligBesparelse, 500);
+            document.getElementById('roiResultat').textContent = `${roi.toFixed(0)}%`;
+            document.getElementById('paybackPeriod').textContent = `${payback.toFixed(1)} mnd`;
+        }
+
+        function formatNOK(number) {
+            return new Intl.NumberFormat('nb-NO', {
+                style: 'currency',
+                currency: 'NOK',
+                maximumFractionDigits: 0
+            }).format(number);
+        }
+
+        // Event listener for daglige timer spart
+        document.getElementById('dagligeTimerSpart').addEventListener('input', calculate);
+
+        // Legg til event listener for "Send Data"-knappen
+        document.getElementById('sendDataButton').addEventListener('click', function() {
+            const data = {
+                kundeNavn: document.getElementById('kundeNavn').value,
+                bedriftsNavn: document.getElementById('bedriftsNavn').value,
+                kundeEmail: document.getElementById('kundeEmail').value,
+                dagligeTimerSpart: document.getElementById('dagligeTimerSpart').value,
+                ansatte: document.getElementById('ansatte').value,
+                månedslønn: document.getElementById('månedslønn').value,
+                arbeidstimer: document.getElementById('ukentligeTimer').value,
+                startKostnad: document.getElementById('startKostnad').value,
+                vedlikeholdKostnad: document.getElementById('vedlikeholdKostnad').value,
+                ovrigeBesparelser: document.getElementById('ovrigeBesparelser').value,
+                ukentligBesparelse: document.getElementById('ukentligeBesparelser').textContent.replace(/[^0-9.-]+/g,""),
+                månedligBesparelse: document.getElementById('månedligeBesparelser').textContent.replace(/[^0-9.-]+/g,""),
+                årligBesparelse: document.getElementById('årligeBesparelser').textContent.replace(/[^0-9.-]+/g,""),
+                roi: document.getElementById('roiResultat').textContent.replace(/[^0-9.-]+/g,""),
+                paybackPeriod: document.getElementById('paybackPeriod').textContent.replace(/[^0-9.-]+/g,""),
+            };
+
+            console.log('Prøver å sende data:', data);
+
+            fetch('https://hook.eu2.make.com/soxg4f46we7438hsnfbvgth89yomxu0q', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => {
+                console.log('HTTP status:', response.status);
+                return response.json().catch(() => ({}));
+            })
+            .finally(() => {
+                alert('Takk for at du brukte kalkulatoren! Du vil få en e-post med all info straks.');
+                
+                // Tøm inputfeltene etter innsending
+                document.getElementById('kundeNavn').value = '';
+                document.getElementById('bedriftsNavn').value = '';
+                document.getElementById('kundeEmail').value = '';
+                document.getElementById('dagligeTimerSpart').value = '1'; // Reset to default
+                document.getElementById('ansatte').value = '1'; // Reset to default
+                document.getElementById('månedslønn').value = '56360'; // Reset to default
+                document.getElementById('ukentligeTimer').value = '37.5'; // Reset to default
+                document.getElementById('startKostnad').value = '32500'; // Reset to default
+                document.getElementById('vedlikeholdKostnad').value = '1500'; // Reset to default
+                document.getElementById('ovrigeBesparelser').value = '5000'; // Reset to default
+            });
+        });
+    });
+    </script>
+</body>
+</html>
