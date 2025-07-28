@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Tilbudsgenerator - AIKI</title>
+    <link rel="icon" type="image/png" href="https://images.squarespace-cdn.com/content/v1/67a10d12887082593bb5d293/d39dc0a0-5a17-4ef9-88a4-2d0edb45fd5e/LOGO+l.png?format=500w">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- AIKI Shared Styles -->
+    <link rel="stylesheet" href="../assets/css/aiki-theme.css">
+    
+    <!-- Global Configuration -->
+    <script src="../config.js"></script>
+    <script src="../assets/js/aiki-common.js"></script>
+</head>
+<body>
+    <div class="page-container">
+        <div class="aiki-container" style="max-width: 600px;">
+            <div class="aiki-header-home">
+                <a href="../" style="text-decoration: none; color: inherit;">
+                    <img src="https://images.squarespace-cdn.com/content/v1/67a10d12887082593bb5d293/d39dc0a0-5a17-4ef9-88a4-2d0edb45fd5e/LOGO+l.png?format=500w" alt="AIKI logo" class="header-logo" style="max-width: 80px;" />
+                </a>
+                <h1>AI Tilbudsgenerator</h1>
+                <p>Lag profesjonelle tilbud til kunder med AI-assistanse</p>
+                <a href="../" class="back-link" style="color: rgba(255,255,255,0.8); text-decoration: none; font-size: 14px; margin-top: 10px; display: inline-block;">
+                    <i class="fas fa-arrow-left"></i> Tilbake til hovedsiden
+                </a>
+            </div>
+            
+            <div class="aiki-content">
+                <form class="ai-form" id="tilbudForm">
+                    <div class="form-group">
+                        <label for="tilbudKunde">Kundenavn *</label>
+                        <input type="text" id="tilbudKunde" name="kunde" required placeholder="Navn på kunde/bedrift">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tilbudTjenester">Ønskede tjenester *</label>
+                        <textarea id="tilbudTjenester" name="tjenester" required placeholder="Beskriv ønskede tjenester og leveranser i detalj" rows="4"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tilbudBudsjett">Estimert budsjett (NOK)</label>
+                        <input type="number" id="tilbudBudsjett" name="budsjett" placeholder="100000" min="1000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tilbudKrav">Spesielle krav/ønsker</label>
+                        <textarea id="tilbudKrav" name="krav" placeholder="Eventuelle spesielle krav, tekniske spesifikasjoner eller tilpasninger" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tilbudDeadline">Ønsket leveringsdato</label>
+                        <input type="date" id="tilbudDeadline" name="deadline">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tilbudKontakt">Din e-post *</label>
+                        <input type="email" id="tilbudKontakt" name="kontakt" required placeholder="din@epost.no">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-full btn-large">
+                        <i class="fas fa-magic"></i>
+                        <span>Generer Profesjonelt Tilbud</span>
+                    </button>
+                </form>
+
+                <div id="tilbudResult" class="result-container" style="display: none;">
+                    <h3><i class="fas fa-check-circle"></i> Tilbud Generert!</h3>
+                    <div id="tilbudContent" class="result-content"></div>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button onclick="downloadTilbud()" class="btn btn-secondary btn-large">
+                            <i class="fas fa-download"></i> <span>Last ned som PDF</span>
+                        </button>
+                        <button onclick="emailTilbud()" class="btn btn-secondary btn-large" style="margin-left: 10px;">
+                            <i class="fas fa-envelope"></i> <span>Send på e-post</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info-seksjon -->
+                <div style="margin-top: var(--spacing-xl); padding: var(--spacing-md); background: var(--color-gray-light); border-radius: var(--radius-md); text-align: center;">
+                    <p style="font-size: var(--font-size-small); color: var(--color-gray-medium); margin-bottom: var(--spacing-sm);">
+                        <i class="fas fa-info-circle"></i> AI-genereringen tar typisk 10-30 sekunder
+                    </p>
+                    <p style="font-size: var(--font-size-small); color: var(--color-gray-medium);">
+                        <strong>Support:</strong> amund@aiki.as | <strong>Web:</strong> www.aiki.as
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Modules JavaScript -->
+    <script src="../ai-modules.js"></script>
+    
+    <script>
+        // Initialize AIKI Tilbudsgenerator
+        document.addEventListener('DOMContentLoaded', function() {
+            const aiProcessor = new AIKIProcessor();
+            let generatedTilbud = '';
+
+            document.getElementById('tilbudForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const btn = this.querySelector('button[type="submit"]');
+                const result = document.getElementById('tilbudResult');
+                const content = document.getElementById('tilbudContent');
+                
+                // Loading state
+                btn.innerHTML = '<div class="aiki-loading"></div> AI arbeider med tilbudet...';
+                btn.disabled = true;
+                
+                try {
+                    const formData = AIKI.forms.getData(this);
+                    
+                    // Send to webhook (replace with your webhook URL)
+                    const webhookResponse = await fetch('https://your-webhook-url.com/tilbud', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            type: 'tilbud_request',
+                            data: formData,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+                    
+                    // Generate AI tilbud
+                    const tilbud = await aiProcessor.generateTilbud(formData);
+                    generatedTilbud = tilbud;
+                    
+                    content.textContent = tilbud;
+                    result.style.display = 'block';
+                    
+                    // Smooth scroll to result
+                    result.scrollIntoView({ behavior: 'smooth' });
+                    
+                    AIKI.logger.success('Tilbud generated successfully');
+                    
+                } catch (error) {
+                    content.innerHTML = `
+                        <div style="color: var(--error-red); text-align: center; padding: 20px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Beklager! Noe gikk galt med AI-genereringen.</p>
+                            <p style="font-size: 14px; opacity: 0.8;">Prøv igjen om litt eller kontakt support.</p>
+                        </div>
+                    `;
+                    result.style.display = 'block';
+                    AIKI.logger.error('Tilbud generation error:', error);
+                } finally {
+                    btn.innerHTML = '<i class="fas fa-magic"></i> <span>Generer Profesjonelt Tilbud</span>';
+                    btn.disabled = false;
+                }
+            });
+
+            // Download function
+            window.downloadTilbud = function() {
+                if (!generatedTilbud) return;
+                
+                const element = document.createElement('a');
+                const file = new Blob([generatedTilbud], {type: 'text/plain'});
+                element.href = URL.createObjectURL(file);
+                element.download = `tilbud_${new Date().toISOString().split('T')[0]}.txt`;
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+            };
+
+            // Email function
+            window.emailTilbud = function() {
+                if (!generatedTilbud) return;
+                
+                const subject = encodeURIComponent('Generert tilbud fra AIKI AI');
+                const body = encodeURIComponent(generatedTilbud);
+                window.open(`mailto:?subject=${subject}&body=${body}`);
+            };
+
+            AIKI.logger.success('🎯 AIKI Tilbudsgenerator er klar!');
+        });
+    </script>
+</body>
+</html> 

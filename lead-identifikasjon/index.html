@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Lead Identifikasjon - AIKI</title>
+    <link rel="icon" type="image/png" href="https://images.squarespace-cdn.com/content/v1/67a10d12887082593bb5d293/d39dc0a0-5a17-4ef9-88a4-2d0edb45fd5e/LOGO+l.png?format=500w">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- AIKI Shared Styles -->
+    <link rel="stylesheet" href="../assets/css/aiki-theme.css">
+    
+    <!-- Global Configuration -->
+    <script src="../config.js"></script>
+    <script src="../assets/js/aiki-common.js"></script>
+</head>
+<body>
+    <div class="page-container">
+        <div class="aiki-container" style="max-width: 600px;">
+            <div class="aiki-header-home">
+                <a href="../" style="text-decoration: none; color: inherit;">
+                    <img src="https://images.squarespace-cdn.com/content/v1/67a10d12887082593bb5d293/d39dc0a0-5a17-4ef9-88a4-2d0edb45fd5e/LOGO+l.png?format=500w" alt="AIKI logo" class="header-logo" style="max-width: 80px;" />
+                </a>
+                <h1>AI Lead Identifikasjon</h1>
+                <p>Identifiser potensielle kunder med intelligent algoritmer</p>
+                <a href="../" class="back-link" style="color: rgba(255,255,255,0.8); text-decoration: none; font-size: 14px; margin-top: 10px; display: inline-block;">
+                    <i class="fas fa-arrow-left"></i> Tilbake til hovedsiden
+                </a>
+            </div>
+            
+            <div class="aiki-content">
+                <form class="ai-form" id="leadsForm">
+                    <div class="form-group">
+                        <label for="leadsBransje">Målbransje *</label>
+                        <input type="text" id="leadsBransje" name="bransje" required placeholder="F.eks. teknologi, helse, finans, industri, handel">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="leadsStørrelse">Bedriftsstørrelse *</label>
+                        <select id="leadsStørrelse" name="størrelse" required>
+                            <option value="">Velg størrelse</option>
+                            <option value="startup">Startup (1-10 ansatte)</option>
+                            <option value="sme">SMB (11-200 ansatte)</option>
+                            <option value="enterprise">Enterprise (200+ ansatte)</option>
+                            <option value="alle">Alle størrelser</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="leadsRegion">Geografisk område *</label>
+                        <select id="leadsRegion" name="region" required>
+                            <option value="">Velg område</option>
+                            <option value="oslo">Oslo og Akershus</option>
+                            <option value="østlandet">Østlandet</option>
+                            <option value="vestlandet">Vestlandet</option>
+                            <option value="trøndelag">Trøndelag</option>
+                            <option value="nord-norge">Nord-Norge</option>
+                            <option value="norge">Hele Norge</option>
+                            <option value="skandinavia">Skandinavia</option>
+                            <option value="norden">Norden</option>
+                            <option value="europa">Europa</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="leadsBehov">Spesifikke behov/teknologier</label>
+                        <textarea id="leadsBehov" name="behov" placeholder="F.eks. digitalisering, automatisering, CRM-system, AI-løsninger, cloud-migrering..." rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="leadsOmsetning">Ønsket omsetningsområde (NOK)</label>
+                        <select id="leadsOmsetning" name="omsetning">
+                            <option value="">Ikke spesifisert</option>
+                            <option value="under-10m">Under 10 millioner</option>
+                            <option value="10-50m">10-50 millioner</option>
+                            <option value="50-200m">50-200 millioner</option>
+                            <option value="200-500m">200-500 millioner</option>
+                            <option value="over-500m">Over 500 millioner</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="leadsPrioritering">Prioritering</label>
+                        <select id="leadsPrioritering" name="prioritering">
+                            <option value="kvalitet">Kvalitet over kvantitet</option>
+                            <option value="kvantitet">Kvantitet over kvalitet</option>
+                            <option value="balansert">Balansert tilnærming</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="leadsKontakt">Din e-post *</label>
+                        <input type="email" id="leadsKontakt" name="kontakt" required placeholder="din@epost.no">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-full btn-large">
+                        <i class="fas fa-search"></i>
+                        <span>Identifiser Potensielle Leads</span>
+                    </button>
+                </form>
+
+                <div id="leadsResult" class="result-container" style="display: none;">
+                    <h3><i class="fas fa-check-circle"></i> Leads Identifisert!</h3>
+                    <div id="leadsContent" class="result-content"></div>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button onclick="downloadLeads()" class="btn btn-secondary btn-large">
+                            <i class="fas fa-download"></i> <span>Last ned som Excel</span>
+                        </button>
+                        <button onclick="emailLeads()" class="btn btn-secondary btn-large" style="margin-left: 10px;">
+                            <i class="fas fa-envelope"></i> <span>Send på e-post</span>
+                        </button>
+                    </div>
+                    <div style="margin-top: 15px; padding: 15px; background: #e8f5e8; border-radius: 8px; border: 1px solid #c3e6c3;">
+                        <p style="margin: 0; font-size: 14px; color: #2d5016;">
+                            <i class="fas fa-lightbulb"></i> 
+                            <strong>Tips:</strong> Følg opp leads innen 24-48 timer for best konverteringsrate.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Info-seksjon -->
+                <div style="margin-top: var(--spacing-xl); padding: var(--spacing-md); background: var(--color-gray-light); border-radius: var(--radius-md); text-align: center;">
+                    <p style="font-size: var(--font-size-small); color: var(--color-gray-medium); margin-bottom: var(--spacing-sm);">
+                        <i class="fas fa-info-circle"></i> AI-søket tar typisk 30-60 sekunder
+                    </p>
+                    <p style="font-size: var(--font-size-small); color: var(--color-gray-medium);">
+                        <strong>Support:</strong> amund@aiki.as | <strong>Web:</strong> www.aiki.as
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Modules JavaScript -->
+    <script src="../ai-modules.js"></script>
+    
+    <script>
+        // Initialize AIKI Lead Identifikasjon
+        document.addEventListener('DOMContentLoaded', function() {
+            const aiProcessor = new AIKIProcessor();
+            let generatedLeads = '';
+
+            document.getElementById('leadsForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const btn = this.querySelector('button[type="submit"]');
+                const result = document.getElementById('leadsResult');
+                const content = document.getElementById('leadsContent');
+                
+                // Loading state
+                btn.innerHTML = '<div class="aiki-loading"></div> AI søker etter leads...';
+                btn.disabled = true;
+                
+                try {
+                    const formData = AIKI.forms.getData(this);
+                    
+                    // Send to webhook (replace with your webhook URL)
+                    const webhookResponse = await fetch('https://your-webhook-url.com/leads', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            type: 'leads_request',
+                            data: formData,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+                    
+                    // Generate AI leads
+                    const leads = await aiProcessor.generateLeads(formData);
+                    generatedLeads = leads;
+                    
+                    content.textContent = leads;
+                    result.style.display = 'block';
+                    
+                    // Smooth scroll to result
+                    result.scrollIntoView({ behavior: 'smooth' });
+                    
+                    AIKI.logger.success('Leads generated successfully');
+                    
+                } catch (error) {
+                    content.innerHTML = `
+                        <div style="color: var(--error-red); text-align: center; padding: 20px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Beklager! Noe gikk galt med lead-søket.</p>
+                            <p style="font-size: 14px; opacity: 0.8;">Prøv igjen om litt eller kontakt support.</p>
+                        </div>
+                    `;
+                    result.style.display = 'block';
+                    AIKI.logger.error('Leads generation error:', error);
+                } finally {
+                    btn.innerHTML = '<i class="fas fa-search"></i> <span>Identifiser Potensielle Leads</span>';
+                    btn.disabled = false;
+                }
+            });
+
+            // Download function
+            window.downloadLeads = function() {
+                if (!generatedLeads) return;
+                
+                const element = document.createElement('a');
+                const file = new Blob([generatedLeads], {type: 'text/plain'});
+                element.href = URL.createObjectURL(file);
+                element.download = `leads_${new Date().toISOString().split('T')[0]}.txt`;
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+            };
+
+            // Email function
+            window.emailLeads = function() {
+                if (!generatedLeads) return;
+                
+                const subject = encodeURIComponent('Genererte leads fra AIKI AI');
+                const body = encodeURIComponent(generatedLeads);
+                window.open(`mailto:?subject=${subject}&body=${body}`);
+            };
+
+            AIKI.logger.success('🎯 AIKI Lead Identifikasjon er klar!');
+        });
+    </script>
+</body>
+</html> 
