@@ -507,7 +507,7 @@
         }
 
         // Main calculator logic
-        document.addEventListener('DOMContentLoaded', function() {
+        function initCalculator() {
             log('Kalkulator starter...');
             
             const calculateBtn = document.getElementById('calculateBtn');
@@ -625,12 +625,24 @@
                         return;
                     }
 
-                    await importFromProff({ orgnr, navn });
+                    try {
+                        statusEl.textContent = 'Kaller webhook...';
+                        await importFromProff({ orgnr, navn });
+                    } catch (e) {
+                        statusEl.textContent = 'Kunne ikke nå webhook (mulig CORS). Prøver BRREG...';
+                        await importFromBrreg({ orgnr, navn });
+                    }
                 });
             }
 
             log('AIKI Intern Kalkulator er klar!');
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initCalculator);
+        } else {
+            initCalculator();
+        }
     </script>
 </body>
 </html> 
