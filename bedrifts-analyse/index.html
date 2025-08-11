@@ -158,8 +158,9 @@
                 try {
                     const formData = AIKI.forms.getData(this);
                     
-                    // Send to webhook (replace with your webhook URL)
-                    const webhookResponse = await fetch('https://your-webhook-url.com/bedriftsanalyse', {
+                    // Send til konfigurert webhook (Make.com)
+                    const webhookUrl = AIKI.getConfig('api.endpoints.makeWebhook', 'https://hook.eu2.make.com/pvfoqf3axkcz3wisaj7ogf18n28zuxxb');
+                    const webhookResponse = await fetch(webhookUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
