@@ -41,7 +41,7 @@ AIKI.config = {
             // External APIs
             proffApi: 'https://api.proff.no/api/companies/',
             aiApi: 'https://api.openai.com/v1/',
-            makeWebhook: 'https://hook.eu2.make.com/pvfoqf3axkcz3wisaj7ogf18n28zuxxb'
+            makeWebhook: 'https://hook.eu2.make.com/brvh5nl39vspnst5nb7vf4enqdt830s1'
         }
     },
     
