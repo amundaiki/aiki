@@ -185,9 +185,9 @@
                         </h3>
                         
                         <div class="input-group">
-                            <label for="proffRef">Proff.no-lenke eller orgnr</label>
+                            <label for="proffRef">Bedriftsnavn, orgnr eller Proff-lenke</label>
                             <div class="proff-import">
-                                <input type="text" id="proffRef" placeholder="https://www.proff.no/firma/.../ORGNR/ eller 9-sifret orgnr">
+                                <input type="text" id="proffRef" placeholder="F.eks: 'Norsk Hydro' eller 984851006 eller proff-lenke">
                                 <button id="importProffBtn" class="btn btn-secondary">
                                     <i class="fas fa-download"></i>
                                     Importer fra Proff
@@ -366,17 +366,19 @@
             } catch(e) { /* ignore */ }
         }
 
-        function extractOrgnr(input) {
-            if (!input) return null;
+        function parseQuery(input) {
+            if (!input) return { orgnr: null, navn: null };
             const trimmed = String(input).trim();
             const digits = trimmed.replace(/\D/g, '');
-            if (digits.length === 9) return digits;
-            // Try to find 9-digit sequence in URL or text
+            if (digits.length === 9) {
+                return { orgnr: digits, navn: null };
+            }
             const match = trimmed.match(/(?:^|\D)(\d{9})(?:\D|$)/);
-            return match ? match[1] : null;
+            if (match) return { orgnr: match[1], navn: null };
+            return { orgnr: null, navn: trimmed };
         }
 
-        async function importFromProff(orgnr) {
+        async function importFromProff({ orgnr = null, navn = null }) {
             const statusEl = document.getElementById('importStatus');
             statusEl.textContent = 'Slår opp bedriftsdata...';
             try {
@@ -387,7 +389,7 @@
 
                 const payload = {
                     type: 'proff_lookup',
-                    data: { orgnr },
+                    data: { orgnr, navn },
                     source: 'intern-kalkulator',
                     timestamp: new Date().toISOString()
                 };
@@ -399,9 +401,20 @@
                 });
 
                 if (!res.ok) throw new Error('Webhook-respons feilet');
-                const json = await res.json();
+                let data;
+                try {
+                    const json = await res.json();
+                    data = json && (json.data || json);
+                } catch (e) {
+                    const text = await res.text();
+                    // Make.com kan returnere bare "Accepted" uten body
+                    if (text && text.toLowerCase().includes('accepted')) {
+                        statusEl.textContent = 'Webhook mottok forespørselen (Accepted). Henter fra BRREG som fallback...';
+                        return await importFromBrreg({ orgnr, navn });
+                    }
+                    throw new Error('Ugyldig webhook-respons');
+                }
 
-                const data = json && (json.data || json);
                 // Heuristikk på feltnavn
                 const omsetning = Number(data.omsetning || data.revenue || data.turnover || 0);
                 const resultat = Number(data.resultat || data.arsresultat || data.netIncome || 0);
@@ -416,7 +429,48 @@
 
             } catch (e) {
                 console.error(e);
-                statusEl.textContent = 'Kunne ikke importere fra Proff. Legg inn manuelt.';
+                statusEl.textContent = 'Kunne ikke importere fra Proff. Henter fra BRREG som fallback...';
+                // Fallback til BRREG
+                try {
+                    const { orgnr, navn } = parseQuery(document.getElementById('proffRef').value);
+                    await importFromBrreg({ orgnr, navn });
+                } catch (e2) {
+                    statusEl.textContent = 'BRREG-fallback feilet. Legg inn manuelt.';
+                }
+            }
+        }
+
+        async function importFromBrreg({ orgnr = null, navn = null }) {
+            const statusEl = document.getElementById('importStatus');
+            try {
+                let url;
+                if (orgnr) {
+                    url = `https://data.brreg.no/enhetsregisteret/api/enheter?organisasjonsnummer=${encodeURIComponent(orgnr)}`;
+                } else if (navn) {
+                    url = `https://data.brreg.no/enhetsregisteret/api/enheter?navn=${encodeURIComponent(navn)}`;
+                } else {
+                    statusEl.textContent = 'Mangler søkekriterier.';
+                    return;
+                }
+
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error('BRREG-respons feilet');
+                const json = await res.json();
+
+                const enheter = (json && (json._embedded && json._embedded.enheter)) || (json && json.enheter) || [];
+                const first = Array.isArray(enheter) ? enheter[0] : null;
+                if (!first) {
+                    statusEl.textContent = 'Ingen treff i BRREG.';
+                    return;
+                }
+
+                const ansatte = Number(first.antallAnsatte || 0);
+                if (ansatte > 0) document.getElementById('antallAnsatte').value = String(Math.round(ansatte));
+                statusEl.textContent = `Importert fra BRREG: ${(first.navn || '')} (${first.organisasjonsnummer || ''})`;
+                saveState();
+            } catch (e) {
+                console.error(e);
+                statusEl.textContent = 'BRREG-fallback feilet. Legg inn manuelt.';
             }
         }
 
@@ -524,19 +578,22 @@
             if (importBtn) {
                 importBtn.addEventListener('click', async () => {
                     const value = proffRef.value;
-                    const orgnr = extractOrgnr(value);
+                    const { orgnr, navn } = parseQuery(value);
                     const statusEl = document.getElementById('importStatus');
-                    if (!orgnr) {
-                        statusEl.textContent = 'Ugyldig lenke/orgnr. Lim inn proff.no-lenke eller 9-sifret orgnr.';
+
+                    if (!orgnr && (!navn || navn.length < 2)) {
+                        statusEl.textContent = 'Skriv inn bedriftsnavn eller 9-sifret orgnr (eller lim inn Proff-lenke).';
                         if (window.AIKI && AIKI.animations) { AIKI.animations.shake(proffRef); }
                         return;
                     }
-                    if (window.AIKI && AIKI.utils && !AIKI.utils.validateOrgnr(orgnr)) {
+
+                    if (orgnr && window.AIKI && AIKI.utils && !AIKI.utils.validateOrgnr(orgnr)) {
                         statusEl.textContent = 'Orgnr validering feilet. Sjekk nummeret.';
                         if (window.AIKI && AIKI.animations) { AIKI.animations.shake(proffRef); }
                         return;
                     }
-                    await importFromProff(orgnr);
+
+                    await importFromProff({ orgnr, navn });
                 });
             }
 
