@@ -107,6 +107,7 @@
                 <div id="bedriftinfoResult" class="result-container" style="display: none;">
                     <h3><i class="fas fa-check-circle"></i> Bedriftsanalyse Fullført!</h3>
                     <div id="bedriftinfoContent" class="result-content"></div>
+                    <div id="webhookResponse" class="result-content" style="margin-top: 10px; font-size: 12px; color: var(--color-gray-medium); display: none;"></div>
                     <div style="margin-top: 20px; text-align: center;">
                         <button onclick="downloadAnalyse()" class="btn btn-secondary btn-large">
                             <i class="fas fa-download"></i> <span>Last ned som PDF</span>
@@ -171,6 +172,32 @@
                             timestamp: new Date().toISOString()
                         })
                     });
+                    
+                    // Forsøk å lese responsinnhold
+                    const webhookStatus = webhookResponse.status;
+                    const webhookOk = webhookResponse.ok;
+                    let webhookBodyText = '';
+                    
+                    try {
+                        const contentType = webhookResponse.headers.get('content-type') || '';
+                        if (contentType.includes('application/json')) {
+                            const json = await webhookResponse.json();
+                            webhookBodyText = JSON.stringify(json);
+                        } else {
+                            webhookBodyText = await webhookResponse.text();
+                        }
+                    } catch (e) {
+                        webhookBodyText = '';
+                    }
+                    
+                    const webhookBox = document.getElementById('webhookResponse');
+                    if (webhookBox) {
+                        webhookBox.style.display = 'block';
+                        webhookBox.innerHTML = `<div style="padding:10px;border:1px dashed var(--color-gray-border);border-radius:6px;background:#fafafa;">
+                            <strong>Webhook status:</strong> ${webhookStatus} ${webhookOk ? '(OK)' : '(Feil)'}<br/>
+                            ${webhookBodyText ? `<strong>Respons:</strong> <code style="white-space:pre-wrap;">${webhookBodyText}</code>` : '<em>Ingen responsinnhold</em>'}
+                        </div>`;
+                    }
                     
                     // Generate AI bedriftsanalyse
                     const analyse = await aiProcessor.generateBedriftInfo(formData);
