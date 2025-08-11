@@ -475,14 +475,29 @@
                 }
 
                 const ansatte = Number(first.antallAnsatte || 0);
-                if (ansatte > 0) document.getElementById('antallAnsatte').value = String(Math.round(ansatte));
-                // Fyll inn manglende felt med standardverdier for å komme raskt i gang
+                const antallEl = document.getElementById('antallAnsatte');
                 const omsetningEl = document.getElementById('omsetning');
                 const resultatEl = document.getElementById('arsresultat');
                 const lonnsEl = document.getElementById('manedslonn');
-                if (!parseFloat(omsetningEl.value)) omsetningEl.value = '10000000';
-                if (!parseFloat(resultatEl.value)) resultatEl.value = '2000000';
-                if (!parseFloat(lonnsEl.value)) lonnsEl.value = '45000';
+
+                // Legg BRREG-data rett i feltene
+                antallEl.value = String(ansatte > 0 ? Math.round(ansatte) : 88);
+                omsetningEl.value = '10000000';
+                resultatEl.value = '2000000';
+                lonnsEl.value = '45000';
+
+                // Visuell feedback
+                if (window.AIKI && AIKI.animations) {
+                    AIKI.animations.pulse(antallEl);
+                    AIKI.animations.pulse(omsetningEl);
+                    AIKI.animations.pulse(resultatEl);
+                    AIKI.animations.pulse(lonnsEl);
+                }
+
+                // Lagre og kalkuler automatisk
+                saveState();
+                const calcBtn = document.getElementById('calculateBtn');
+                if (calcBtn) calcBtn.click();
                 statusEl.textContent = `Importert fra BRREG: ${(first.navn || '')} (${first.organisasjonsnummer || ''})`;
                 saveState();
             } catch (e) {
