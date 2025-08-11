@@ -394,48 +394,16 @@
                     timestamp: new Date().toISOString()
                 };
 
-                const res = await fetch(webhookUrl, {
+                await fetch(webhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    mode: 'no-cors',
                     body: JSON.stringify(payload)
                 });
 
-                if (!res.ok) throw new Error('Webhook-respons feilet');
-                let data;
-                try {
-                    const json = await res.json();
-                    data = json && (json.data || json);
-                } catch (e) {
-                    const text = await res.text();
-                    // Make.com kan returnere bare "Accepted" uten body
-                    if (text && text.toLowerCase().includes('accepted')) {
-                        statusEl.textContent = 'Webhook mottok forespørselen (Accepted). Henter fra BRREG som fallback...';
-                        return await importFromBrreg({ orgnr, navn });
-                    }
-                    throw new Error('Ugyldig webhook-respons');
-                }
-
-                // Heuristikk på feltnavn
-                const omsetning = Number(data.omsetning || data.revenue || data.turnover || 0);
-                const resultat = Number(data.resultat || data.arsresultat || data.netIncome || 0);
-                const ansatte = Number(data.ansatte || data.employees || data.antallAnsatte || 0);
-
-                if (omsetning > 0) document.getElementById('omsetning').value = String(Math.round(omsetning));
-                if (resultat > 0) document.getElementById('arsresultat').value = String(Math.round(resultat));
-                if (ansatte > 0) document.getElementById('antallAnsatte').value = String(Math.round(ansatte));
-
-                // Fyll inn standardverdier dersom felter mangler etter import
-                const omsetningEl = document.getElementById('omsetning');
-                const resultatEl = document.getElementById('arsresultat');
-                const antallEl = document.getElementById('antallAnsatte');
-                const lonnsEl = document.getElementById('manedslonn');
-                if (!parseFloat(omsetningEl.value)) omsetningEl.value = '10000000';
-                if (!parseFloat(resultatEl.value)) resultatEl.value = '2000000';
-                if (!parseInt(antallEl.value)) antallEl.value = '88';
-                if (!parseFloat(lonnsEl.value)) lonnsEl.value = '45000';
-
-                statusEl.textContent = 'Data importert fra Proff.';
-                saveState();
+                // I no-cors kan vi ikke lese respons. Anta sendt og hent UI-data via BRREG.
+                statusEl.textContent = 'Webhook sendt (kan svare "Accepted"). Henter fra BRREG...';
+                return await importFromBrreg({ orgnr, navn });
 
             } catch (e) {
                 console.error(e);
@@ -625,12 +593,19 @@
                         return;
                     }
 
+                    // Disable knapp og vis spinner
+                    const prevHtml = importBtn.innerHTML;
+                    importBtn.disabled = true;
+                    importBtn.innerHTML = '<div class="aiki-loading"></div> Importerer...';
                     try {
                         statusEl.textContent = 'Kaller webhook...';
                         await importFromProff({ orgnr, navn });
                     } catch (e) {
                         statusEl.textContent = 'Kunne ikke nå webhook (mulig CORS). Prøver BRREG...';
                         await importFromBrreg({ orgnr, navn });
+                    } finally {
+                        importBtn.disabled = false;
+                        importBtn.innerHTML = prevHtml;
                     }
                 });
             }
