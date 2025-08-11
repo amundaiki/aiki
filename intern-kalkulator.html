@@ -203,12 +203,12 @@
                         
                         <div class="input-group">
                             <label for="arsresultat">Årsresultat (NOK) <span style="opacity:.6; font-weight:400;">(valgfritt)</span></label>
-                            <input type="number" id="arsresultat" placeholder="2000000" min="0" value="">
+                            <input type="number" id="arsresultat" placeholder="2000000" min="0" value="2000000">
                         </div>
                         
                         <div class="input-group">
                             <label for="antallAnsatte">Antall ansatte</label>
-                            <input type="number" id="antallAnsatte" placeholder="25" min="1" value="25">
+                            <input type="number" id="antallAnsatte" placeholder="25" min="1" value="88">
                         </div>
                         
                         <div class="input-group">
@@ -424,6 +424,16 @@
                 if (resultat > 0) document.getElementById('arsresultat').value = String(Math.round(resultat));
                 if (ansatte > 0) document.getElementById('antallAnsatte').value = String(Math.round(ansatte));
 
+                // Fyll inn standardverdier dersom felter mangler etter import
+                const omsetningEl = document.getElementById('omsetning');
+                const resultatEl = document.getElementById('arsresultat');
+                const antallEl = document.getElementById('antallAnsatte');
+                const lonnsEl = document.getElementById('manedslonn');
+                if (!parseFloat(omsetningEl.value)) omsetningEl.value = '10000000';
+                if (!parseFloat(resultatEl.value)) resultatEl.value = '2000000';
+                if (!parseInt(antallEl.value)) antallEl.value = '88';
+                if (!parseFloat(lonnsEl.value)) lonnsEl.value = '45000';
+
                 statusEl.textContent = 'Data importert fra Proff.';
                 saveState();
 
@@ -466,6 +476,13 @@
 
                 const ansatte = Number(first.antallAnsatte || 0);
                 if (ansatte > 0) document.getElementById('antallAnsatte').value = String(Math.round(ansatte));
+                // Fyll inn manglende felt med standardverdier for å komme raskt i gang
+                const omsetningEl = document.getElementById('omsetning');
+                const resultatEl = document.getElementById('arsresultat');
+                const lonnsEl = document.getElementById('manedslonn');
+                if (!parseFloat(omsetningEl.value)) omsetningEl.value = '10000000';
+                if (!parseFloat(resultatEl.value)) resultatEl.value = '2000000';
+                if (!parseFloat(lonnsEl.value)) lonnsEl.value = '45000';
                 statusEl.textContent = `Importert fra BRREG: ${(first.navn || '')} (${first.organisasjonsnummer || ''})`;
                 saveState();
             } catch (e) {
