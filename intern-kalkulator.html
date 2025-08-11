@@ -12,6 +12,10 @@
     <!-- AIKI Shared Styles -->
     <link rel="stylesheet" href="assets/css/aiki-theme.css">
     
+    <!-- AIKI Config & Utilities -->
+    <script src="config.js"></script>
+    <script src="assets/js/aiki-common.js"></script>
+
     <style>
         /* Calculator-specific styles */
         .calculator-grid {
@@ -141,6 +145,20 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .proff-import {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .status-text {
+            font-size: var(--font-size-small);
+            color: var(--color-gray-medium);
+            margin-top: var(--spacing-xs);
+            min-height: 18px;
+        }
     </style>
 </head>
 <body>
@@ -168,13 +186,25 @@
                         </h3>
                         
                         <div class="input-group">
+                            <label for="proffRef">Proff.no-lenke eller orgnr</label>
+                            <div class="proff-import">
+                                <input type="text" id="proffRef" placeholder="https://www.proff.no/firma/.../ORGNR/ eller 9-sifret orgnr">
+                                <button id="importProffBtn" class="btn btn-secondary">
+                                    <i class="fas fa-download"></i>
+                                    Importer fra Proff
+                                </button>
+                            </div>
+                            <div id="importStatus" class="status-text"></div>
+                        </div>
+
+                        <div class="input-group">
                             <label for="omsetning">Årlig omsetning (NOK)</label>
                             <input type="number" id="omsetning" placeholder="10000000" min="0" value="10000000">
                         </div>
                         
                         <div class="input-group">
-                            <label for="arsresultat">Årsresultat (NOK)</label>
-                            <input type="number" id="arsresultat" placeholder="2000000" min="0" value="2000000">
+                            <label for="arsresultat">Årsresultat (NOK) <span style="opacity:.6; font-weight:400;">(valgfritt)</span></label>
+                            <input type="number" id="arsresultat" placeholder="2000000" min="0" value="">
                         </div>
                         
                         <div class="input-group">
@@ -201,8 +231,8 @@
                         </div>
                         
                         <div class="input-group">
-                            <label for="prissettingsProsent">Prissettingsprosent av årsresultat (%)</label>
-                            <input type="number" id="prissettingsProsent" placeholder="1.5" min="0.1" max="10" step="0.1" value="1.5">
+                            <label for="prissettingsProsent">Prissettingsprosent av omsetning (%)</label>
+                            <input type="number" id="prissettingsProsent" placeholder="0.5" min="0.1" max="10" step="0.1" value="0.8">
                         </div>
                         
                         <div class="input-group">
@@ -233,6 +263,11 @@
                             <p class="value" id="anbefalPris">-</p>
                         </div>
                         
+                        <div class="result-box">
+                            <h3>Månedspris</h3>
+                            <p class="value" id="manedsPris">-</p>
+                        </div>
+
                         <div class="result-box">
                             <h3>Kundens Årlige Besparelse</h3>
                             <p class="value" id="arligBesparelse">-</p>
@@ -275,17 +310,115 @@
     <script>
         // Simple logger function
         function log(message, data) {
-            console.log('AIKI:', message, data || '');
+            if (window.AIKI && AIKI.config && AIKI.config.debug) {
+                console.log('AIKI:', message, data || '');
+            }
         }
 
-        // Format currency function
+        // Format currency function (prefer AIKI utils if available)
         function formatCurrency(amount) {
+            if (window.AIKI && AIKI.utils && typeof AIKI.utils.formatNOK === 'function') {
+                return AIKI.utils.formatNOK(Math.round(amount || 0));
+            }
             return new Intl.NumberFormat('nb-NO', {
                 style: 'currency',
                 currency: 'NOK',
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0
-            }).format(amount);
+            }).format(amount || 0);
+        }
+
+        function formatPercent(num) {
+            if (window.AIKI && AIKI.utils && typeof AIKI.utils.formatPercent === 'function') {
+                return AIKI.utils.formatPercent(num);
+            }
+            const n = isNaN(num) ? 0 : Number(num);
+            return n.toFixed(1) + '%';
+        }
+
+        function animateValue(el, start, end, formatter) {
+            if (window.AIKI && AIKI.animations && typeof AIKI.animations.animateValue === 'function') {
+                AIKI.animations.animateValue(el, start, end, 900, formatter);
+                return;
+            }
+            el.textContent = formatter ? formatter(end) : end;
+        }
+
+        function saveState() {
+            try {
+                const ids = ['omsetning','arsresultat','antallAnsatte','manedslonn','timerSpart','prissettingsProsent','varInvestering','vedlikehold'];
+                const data = {};
+                ids.forEach(id => { const el = document.getElementById(id); if (el) data[id] = el.value; });
+                localStorage.setItem('aiki_kalkulator', JSON.stringify(data));
+            } catch(e) { /* ignore */ }
+        }
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem('aiki_kalkulator');
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                Object.entries(data).forEach(([id, val]) => {
+                    const el = document.getElementById(id);
+                    if (el && (el.value === '' || el.value === el.getAttribute('value'))) {
+                        el.value = val;
+                    }
+                });
+            } catch(e) { /* ignore */ }
+        }
+
+        function extractOrgnr(input) {
+            if (!input) return null;
+            const trimmed = String(input).trim();
+            const digits = trimmed.replace(/\D/g, '');
+            if (digits.length === 9) return digits;
+            // Try to find 9-digit sequence in URL or text
+            const match = trimmed.match(/(?:^|\D)(\d{9})(?:\D|$)/);
+            return match ? match[1] : null;
+        }
+
+        async function importFromProff(orgnr) {
+            const statusEl = document.getElementById('importStatus');
+            statusEl.textContent = 'Slår opp bedriftsdata...';
+            try {
+                const webhookUrl = (window.AIKI && AIKI.getConfig) ? AIKI.getConfig('api.endpoints.makeWebhook') : null;
+                if (!webhookUrl) {
+                    throw new Error('Webhook-URL ikke konfigurert i config.js');
+                }
+
+                const payload = {
+                    type: 'proff_lookup',
+                    data: { orgnr },
+                    source: 'intern-kalkulator',
+                    timestamp: new Date().toISOString()
+                };
+
+                const res = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) throw new Error('Webhook-respons feilet');
+                const json = await res.json();
+
+                const data = json && (json.data || json);
+                // Heuristikk på feltnavn
+                const omsetning = Number(data.omsetning || data.revenue || data.turnover || 0);
+                const resultat = Number(data.resultat || data.arsresultat || data.netIncome || 0);
+                const ansatte = Number(data.ansatte || data.employees || data.antallAnsatte || 0);
+
+                if (omsetning > 0) document.getElementById('omsetning').value = String(Math.round(omsetning));
+                if (resultat > 0) document.getElementById('arsresultat').value = String(Math.round(resultat));
+                if (ansatte > 0) document.getElementById('antallAnsatte').value = String(Math.round(ansatte));
+
+                statusEl.textContent = 'Data importert fra Proff.';
+                saveState();
+
+            } catch (e) {
+                console.error(e);
+                statusEl.textContent = 'Kunne ikke importere fra Proff. Legg inn manuelt.';
+            }
         }
 
         // Main calculator logic
@@ -294,6 +427,10 @@
             
             const calculateBtn = document.getElementById('calculateBtn');
             const results = document.getElementById('results');
+            const importBtn = document.getElementById('importProffBtn');
+            const proffRef = document.getElementById('proffRef');
+
+            loadState();
 
             if (!calculateBtn) {
                 log('ERROR: Calculate button not found!');
@@ -312,7 +449,7 @@
                         // Hent verdier
                         const omsetning = parseFloat(document.getElementById('omsetning').value) || 0;
                         const arsresultat = parseFloat(document.getElementById('arsresultat').value) || 0;
-                        const prissettingsProsent = parseFloat(document.getElementById('prissettingsProsent').value) || 1.5;
+                        const prissettingsProsent = parseFloat(document.getElementById('prissettingsProsent').value) || 0.8;
                         const timerSpart = parseFloat(document.getElementById('timerSpart').value) || 0;
                         const antallAnsatte = parseInt(document.getElementById('antallAnsatte').value) || 0;
                         const manedslonn = parseFloat(document.getElementById('manedslonn').value) || 0;
@@ -321,12 +458,13 @@
                         
                         log('Input verdier:', { omsetning, arsresultat, prissettingsProsent, timerSpart, antallAnsatte, manedslonn, varInvestering, vedlikehold });
                         
-                        // Beregninger
-                        const anbefalPris = arsresultat * (prissettingsProsent / 100);
+                        // Beregninger (omsetningsbasert prissetting)
+                        const anbefalPris = omsetning * (prissettingsProsent / 100);
                         const timelonn = (manedslonn * 12) / (37.5 * 52); // Timelønn basert på 37.5t/uke
                         const dagligBesparelse = timerSpart * timelonn * antallAnsatte;
                         const arligBesparelse = dagligBesparelse * 250; // 250 arbeidsdager
                         const arligVedlikehold = vedlikehold * 12;
+                        const manedsPris = anbefalPris / 12;
                         
                         // Kundens beregninger
                         const kundeRoi = anbefalPris > 0 ? ((arligBesparelse - anbefalPris) / anbefalPris) * 100 : 0;
@@ -340,6 +478,7 @@
                         
                         log('Beregninger:', { 
                             anbefalPris, 
+                            manedsPris,
                             arligBesparelse, 
                             kundeRoi, 
                             kundeTilbakebetalingstid,
@@ -348,17 +487,19 @@
                         });
                         
                         // Vis resultater
-                        document.getElementById('anbefalPris').textContent = formatCurrency(anbefalPris);
-                        document.getElementById('arligBesparelse').textContent = formatCurrency(arligBesparelse);
-                        document.getElementById('kundeRoi').textContent = kundeRoi.toFixed(1) + '%';
-                        document.getElementById('kundeTilbakebetalingstid').textContent = kundeTilbakebetalingstid.toFixed(1) + ' mnd';
-                        document.getElementById('aikiRoi').textContent = aikiRoi.toFixed(1) + '%';
-                        document.getElementById('aikiTilbakebetalingstid').textContent = aikiTilbakebetalingstid.toFixed(1) + ' mnd';
+                        animateValue(document.getElementById('anbefalPris'), 0, anbefalPris, formatCurrency);
+                        animateValue(document.getElementById('manedsPris'), 0, manedsPris, formatCurrency);
+                        animateValue(document.getElementById('arligBesparelse'), 0, arligBesparelse, formatCurrency);
+                        animateValue(document.getElementById('kundeRoi'), 0, kundeRoi, (v) => formatPercent(v));
+                        animateValue(document.getElementById('kundeTilbakebetalingstid'), 0, kundeTilbakebetalingstid, (v) => `${v.toFixed(1)} mnd`);
+                        animateValue(document.getElementById('aikiRoi'), 0, aikiRoi, (v) => formatPercent(v));
+                        animateValue(document.getElementById('aikiTilbakebetalingstid'), 0, aikiTilbakebetalingstid, (v) => `${v.toFixed(1)} mnd`);
                         
                         results.style.display = 'block';
                         results.scrollIntoView({ behavior: 'smooth' });
                         
                         log('Resultater vist!');
+                        saveState();
                         
                     } catch (error) {
                         log('ERROR:', error);
@@ -374,11 +515,31 @@
             const inputs = document.querySelectorAll('input[type="number"]');
             inputs.forEach(input => {
                 input.addEventListener('input', function() {
+                    saveState();
                     if (document.getElementById('results').style.display === 'block') {
                         setTimeout(() => document.getElementById('calculateBtn').click(), 500);
                     }
                 });
             });
+
+            if (importBtn) {
+                importBtn.addEventListener('click', async () => {
+                    const value = proffRef.value;
+                    const orgnr = extractOrgnr(value);
+                    const statusEl = document.getElementById('importStatus');
+                    if (!orgnr) {
+                        statusEl.textContent = 'Ugyldig lenke/orgnr. Lim inn proff.no-lenke eller 9-sifret orgnr.';
+                        if (window.AIKI && AIKI.animations) { AIKI.animations.shake(proffRef); }
+                        return;
+                    }
+                    if (window.AIKI && AIKI.utils && !AIKI.utils.validateOrgnr(orgnr)) {
+                        statusEl.textContent = 'Orgnr validering feilet. Sjekk nummeret.';
+                        if (window.AIKI && AIKI.animations) { AIKI.animations.shake(proffRef); }
+                        return;
+                    }
+                    await importFromProff(orgnr);
+                });
+            }
 
             log('AIKI Intern Kalkulator er klar!');
         });
