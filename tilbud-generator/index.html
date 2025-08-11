@@ -100,6 +100,11 @@
                         <i class="fas fa-magic"></i>
                         <span>Generer Profesjonelt Tilbud</span>
                     </button>
+
+                    <button type="button" id="resetFormBtn" class="btn btn-secondary btn-full btn-large" style="margin-top: 10px;">
+                        <i class="fas fa-rotate-left"></i>
+                        <span>Nullstill</span>
+                    </button>
                 </form>
 
                 <div id="tilbudResult" class="result-container" style="display: none;">
@@ -145,6 +150,9 @@
             const annenTxt = document.getElementById('annenKommentar');
             const prisInput = document.getElementById('tilbudPrisEksMva');
             const prisPreview = document.getElementById('prisPreview');
+            const formEl = document.getElementById('tilbudForm');
+            const resetBtn = document.getElementById('resetFormBtn');
+            const FORM_STORAGE_KEY = 'tilbud_form_state';
             const handlePakkeChange = () => {
                 const isCustom = pakkeSelect.value === 'skreddersydd_automasjon';
                 const isOther = pakkeSelect.value === 'annen';
@@ -183,6 +191,43 @@
             if (prisInput) {
                 prisInput.addEventListener('input', updatePrisPreview);
                 updatePrisPreview();
+            }
+
+            // Persist form state until Nullstill
+            const saveFormState = AIKI.utils.debounce(() => {
+                if (!formEl) return;
+                const data = AIKI.forms.getData(formEl);
+                AIKI.storage.set(FORM_STORAGE_KEY, data);
+            }, 200);
+
+            const restoreFormState = () => {
+                const saved = AIKI.storage.get(FORM_STORAGE_KEY, null);
+                if (!saved) return;
+                AIKI.forms.setData(formEl, saved);
+                // Restore radio for ansvarlig
+                if (saved.ansvarlig) {
+                    document.querySelectorAll('input[name="ansvarlig"]').forEach(r => {
+                        r.checked = (r.value === saved.ansvarlig);
+                    });
+                }
+                // Apply UI updates based on restored values
+                handlePakkeChange();
+                updatePrisPreview();
+            };
+
+            if (formEl) {
+                formEl.addEventListener('input', saveFormState);
+                formEl.addEventListener('change', saveFormState);
+                restoreFormState();
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    AIKI.storage.remove(FORM_STORAGE_KEY);
+                    AIKI.forms.reset(formEl);
+                    handlePakkeChange();
+                    updatePrisPreview();
+                });
             }
 
             document.getElementById('tilbudForm').addEventListener('submit', async function(e) {
