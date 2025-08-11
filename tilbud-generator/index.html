@@ -49,7 +49,7 @@
                         <input type="text" id="tilbudKunde" name="kunde" required placeholder="Navn på kunde/bedrift">
                     </div>
                     
-                    <div class="form-group">
+                    <div class="form-group" id="tjenesterGroup">
                         <label for="tilbudTjenester">Ønskede tjenester *</label>
                         <textarea id="tilbudTjenester" name="tjenester" required placeholder="Beskriv ønskede tjenester og leveranser i detalj" rows="4"></textarea>
                     </div>
@@ -150,6 +150,8 @@
             const annenTxt = document.getElementById('annenKommentar');
             const prisInput = document.getElementById('tilbudPrisEksMva');
             const prisPreview = document.getElementById('prisPreview');
+            const tjenesterGroup = document.getElementById('tjenesterGroup');
+            const tjenesterTextarea = document.getElementById('tilbudTjenester');
             const formEl = document.getElementById('tilbudForm');
             const resetBtn = document.getElementById('resetFormBtn');
             const FORM_STORAGE_KEY = 'tilbud_form_state';
@@ -160,6 +162,11 @@
                 autoTxt.required = isCustom;
                 annenGrp.style.display = isOther ? 'block' : 'none';
                 annenTxt.required = isOther;
+                
+                // Skjul/vis "Ønskede tjenester" for satte tilbud
+                const isPreset = pakkeSelect.value === 'ai_kickstart' || pakkeSelect.value === 'ai_revisjon';
+                if (tjenesterGroup) tjenesterGroup.style.display = isPreset ? 'none' : 'block';
+                if (tjenesterTextarea) tjenesterTextarea.required = !isPreset;
 
                 // Sett standardpris ved valg av pakke (kun hvis tom pris)
                 if (prisInput && !prisInput.value) {

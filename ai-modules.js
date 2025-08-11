@@ -11,6 +11,23 @@ class AIKIProcessor {
         };
     }
 
+    getDefaultTjenesterForPakke(pakke) {
+        switch (pakke) {
+            case 'ai_kickstart':
+                return `Kickoff-workshop (2 timer)
+Behovskartlegging og mål
+Oppsett av grunnleggende AI-verktøy
+Opplæring og anbefalinger`;
+            case 'ai_revisjon':
+                return `Teknisk gjennomgang av eksisterende AI-løsninger
+Sikkerhet og personvern-sjekk
+Ytelsesvurdering og forbedringsforslag
+Handlingsplan med prioriterte tiltak`;
+            default:
+                return '';
+        }
+    }
+
     // 🎯 AI Tilbudsgenerator
     async generateTilbud(data) {
         const { kunde, tjenester, krav } = data;
@@ -24,7 +41,11 @@ class AIKIProcessor {
         
         const template = this.getRandomTemplate('tilbud');
         const estimat = this.calculateBudgetEstimate(budsjett);
-        const timeline = this.generateTimeline(tjenester);
+        // Fyll standard tjenester hvis pakke er valgt og tjenester mangler
+        const defaultTjenester = this.getDefaultTjenesterForPakke(pakke);
+        const tjenesterTekst = (tjenester && tjenester.trim().length > 0) ? tjenester : defaultTjenester;
+
+        const timeline = this.generateTimeline(tjenesterTekst);
         
         const pakkeTekst = (
             pakke === 'ai_kickstart' ? 'AI Kickstart' :
@@ -51,7 +72,7 @@ SAMMENDRAG:
 Vi tilbyr avanserte AI-løsninger som vil transformere og effektivisere din virksomhet.
 
 TJENESTER OG LEVERANSER:
-${this.formatTjenester(tjenester)}
+        ${this.formatTjenester(tjenesterTekst)}
 
 VALGT ALTERNATIV:
 ${pakkeTekst}
