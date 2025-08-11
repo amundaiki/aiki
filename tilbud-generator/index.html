@@ -33,6 +33,18 @@
             <div class="aiki-content">
                 <form class="ai-form" id="tilbudForm">
                     <div class="form-group">
+                        <label for="tilbudPakke">Velg alternativ *</label>
+                        <select id="tilbudPakke" name="pakke" required>
+                            <option value="">Velg...</option>
+                            <option value="ai_kickstart">AI Kickstart</option>
+                            <option value="ai_revisjon">AI Revisjon</option>
+                            <option value="skreddersydd_automasjon">Skreddersydd automasjon</option>
+                             <option value="annen">Annen</option>
+                        </select>
+                        <small style="color: var(--color-gray-medium); font-size: 12px;">Velg ønsket tjenestealternativ</small>
+                    </div>
+
+                    <div class="form-group">
                         <label for="tilbudKunde">Kundenavn *</label>
                         <input type="text" id="tilbudKunde" name="kunde" required placeholder="Navn på kunde/bedrift">
                     </div>
@@ -41,10 +53,23 @@
                         <label for="tilbudTjenester">Ønskede tjenester *</label>
                         <textarea id="tilbudTjenester" name="tjenester" required placeholder="Beskriv ønskede tjenester og leveranser i detalj" rows="4"></textarea>
                     </div>
+
+                    <div class="form-group" id="automasjonBeskrivelseGroup" style="display: none;">
+                        <label for="automasjonBeskrivelse">Beskriv ønsket automasjon *</label>
+                        <textarea id="automasjonBeskrivelse" name="automasjon_beskrivelse" placeholder="Forklar hvilken prosess som skal automatiseres, nåværende verktøy/arbeidsflyt, og ønsket mål" rows="3"></textarea>
+                        <small style="color: var(--color-gray-medium); font-size: 12px;">Kreves når "Skreddersydd automasjon" er valgt</small>
+                    </div>
+
+                    <div class="form-group" id="annenKommentarGroup" style="display: none;">
+                        <label for="annenKommentar">Kommentar (Annen) *</label>
+                        <textarea id="annenKommentar" name="annen_kommentar" placeholder="Beskriv hva du ønsker dersom alternativene ikke passer" rows="3"></textarea>
+                        <small style="color: var(--color-gray-medium); font-size: 12px;">Kreves når "Annen" er valgt</small>
+                    </div>
                     
                     <div class="form-group">
-                        <label for="tilbudBudsjett">Estimert budsjett (NOK)</label>
-                        <input type="number" id="tilbudBudsjett" name="budsjett" placeholder="100000" min="1000">
+                        <label for="tilbudPrisEksMva">Pris eks. mva (NOK)</label>
+                        <input type="number" id="tilbudPrisEksMva" name="pris_eks_mva" placeholder="100000" min="1000">
+                        <small id="prisPreview" style="display:block;color: var(--color-gray-medium); font-size: 12px; margin-top: 6px;">inkl. mva (25%): —</small>
                     </div>
                     
                     <div class="form-group">
@@ -102,6 +127,43 @@
         document.addEventListener('DOMContentLoaded', function() {
             const aiProcessor = new AIKIProcessor();
             let generatedTilbud = '';
+            
+            // Toggle beskrivelse for skreddersydd automasjon
+            const pakkeSelect = document.getElementById('tilbudPakke');
+            const autoGrp = document.getElementById('automasjonBeskrivelseGroup');
+            const autoTxt = document.getElementById('automasjonBeskrivelse');
+            const annenGrp = document.getElementById('annenKommentarGroup');
+            const annenTxt = document.getElementById('annenKommentar');
+            const prisInput = document.getElementById('tilbudPrisEksMva');
+            const prisPreview = document.getElementById('prisPreview');
+            const handlePakkeChange = () => {
+                const isCustom = pakkeSelect.value === 'skreddersydd_automasjon';
+                const isOther = pakkeSelect.value === 'annen';
+                autoGrp.style.display = isCustom ? 'block' : 'none';
+                autoTxt.required = isCustom;
+                annenGrp.style.display = isOther ? 'block' : 'none';
+                annenTxt.required = isOther;
+            };
+            if (pakkeSelect) {
+                pakkeSelect.addEventListener('change', handlePakkeChange);
+                handlePakkeChange();
+            }
+
+            // Pris forhåndsvisning inkl. mva
+            const updatePrisPreview = () => {
+                if (!prisInput || !prisPreview) return;
+                const val = parseFloat(prisInput.value);
+                if (isNaN(val)) {
+                    prisPreview.textContent = 'inkl. mva (25%): —';
+                    return;
+                }
+                const inklMva = Math.round(val * 1.25);
+                prisPreview.textContent = `inkl. mva (25%): ${inklMva.toLocaleString('no-NO')} NOK`;
+            };
+            if (prisInput) {
+                prisInput.addEventListener('input', updatePrisPreview);
+                updatePrisPreview();
+            }
 
             document.getElementById('tilbudForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -116,8 +178,8 @@
                 try {
                     const formData = AIKI.forms.getData(this);
                     
-                    // Send to webhook (replace with your webhook URL)
-                    const webhookResponse = await fetch('https://your-webhook-url.com/tilbud', {
+                    // Send to webhook (Make.com)
+                    const webhookResponse = await fetch('https://hook.eu2.make.com/hv2bmapmqa2w7csdb85cj9ka6314ic3o', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

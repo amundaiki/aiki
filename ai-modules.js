@@ -13,7 +13,11 @@ class AIKIProcessor {
 
     // 🎯 AI Tilbudsgenerator
     async generateTilbud(data) {
-        const { kunde, tjenester, budsjett, krav } = data;
+        const { kunde, tjenester, krav } = data;
+        const budsjett = data.pris_eks_mva || data.budsjett;
+        const pakke = data.pakke || '';
+        const automasjonBeskrivelse = data.automasjon_beskrivelse || '';
+        const annenKommentar = data.annen_kommentar || '';
         
         // Simuler AI-prosessering
         await this.delay(2000);
@@ -22,6 +26,19 @@ class AIKIProcessor {
         const estimat = this.calculateBudgetEstimate(budsjett);
         const timeline = this.generateTimeline(tjenester);
         
+        const pakkeTekst = (
+            pakke === 'ai_kickstart' ? 'AI Kickstart' :
+            pakke === 'ai_revisjon' ? 'AI Revisjon' :
+            pakke === 'skreddersydd_automasjon' ? 'Skreddersydd automasjon' :
+            pakke === 'annen' ? 'Annen' : 'Ikke spesifisert'
+        );
+
+        const tilpasninger = [
+            krav && `- Spesielle krav: ${krav}`,
+            automasjonBeskrivelse && `- Automasjonsbeskrivelse: ${automasjonBeskrivelse}`,
+            annenKommentar && `- Kommentar: ${annenKommentar}`
+        ].filter(Boolean).join('\n');
+
         return `PROFESJONELT TILBUD FRA AIKI
 
 TILBUD NR: ${this.generateTilbudNr()}
@@ -36,15 +53,18 @@ Vi tilbyr avanserte AI-løsninger som vil transformere og effektivisere din virk
 TJENESTER OG LEVERANSER:
 ${this.formatTjenester(tjenester)}
 
-ESTIMERT BUDSJETT:
+VALGT ALTERNATIV:
+${pakkeTekst}
+
+ESTIMERT PRIS (eks. mva):
 ${estimat.breakdown}
 TOTALT: ${estimat.total} NOK (eks. mva)
 
 TIDSLINJE:
 ${timeline}
 
-SPESIELLE TILPASNINGER:
-${krav || 'Standard leveranse med AIKI-kvalitet'}
+TILPASNINGER OG NOTATER:
+${tilpasninger || 'Standard leveranse med AIKI-kvalitet'}
 
 HVORFOR VELGE AIKI:
 ✓ AI-drevet teknologi i forreste rekke
