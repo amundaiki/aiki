@@ -564,14 +564,22 @@
                 }, 1000);
             });
 
-            // Auto-recalculate when inputs change
+            // Auto-recalculate when inputs change (debounced, alltid kalkulér)
             const inputs = document.querySelectorAll('input[type="number"]');
-            inputs.forEach(input => {
-                input.addEventListener('input', function() {
+            let recalcTimer;
+            const triggerRecalc = () => {
+                clearTimeout(recalcTimer);
+                recalcTimer = setTimeout(() => {
                     saveState();
-                    if (document.getElementById('results').style.display === 'block') {
-                        setTimeout(() => document.getElementById('calculateBtn').click(), 500);
-                    }
+                    const btn = document.getElementById('calculateBtn');
+                    if (btn) btn.click();
+                }, 300);
+            };
+            inputs.forEach(input => {
+                input.addEventListener('input', triggerRecalc);
+                input.addEventListener('change', triggerRecalc);
+                input.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter') triggerRecalc();
                 });
             });
 
@@ -609,6 +617,10 @@
                     }
                 });
             }
+
+            // Kjør første beregning ved innlasting for å vise resultater umiddelbart
+            const initialBtn = document.getElementById('calculateBtn');
+            if (initialBtn) setTimeout(() => initialBtn.click(), 0);
 
             log('AIKI Intern Kalkulator er klar!');
         }
