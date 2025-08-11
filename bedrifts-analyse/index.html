@@ -145,6 +145,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const aiProcessor = new AIKIProcessor();
             let generatedAnalyse = '';
+            let lastWebhookInfo = { ok: false, status: 0, body: '' };
 
             document.getElementById('bedriftinfoForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -199,8 +200,14 @@
                         </div>`;
                     }
                     
-                    // Generate AI bedriftsanalyse
-                    const analyse = await aiProcessor.generateBedriftInfo(formData);
+                    // Generate AI bedriftsanalyse (tilpass skjemafelter)
+                    const adaptedData = {
+                        bedriftNavn: formData.navn,
+                        orgnr: formData.orgnr || '',
+                        land: 'NO',
+                        analyseType: formData.fokus || 'grunnleggende'
+                    };
+                    const analyse = await aiProcessor.generateBedriftInfo(adaptedData);
                     generatedAnalyse = analyse;
                     
                     content.textContent = analyse;
@@ -212,13 +219,23 @@
                     AIKI.logger.success('Bedriftsanalyse generated successfully');
                     
                 } catch (error) {
-                    content.innerHTML = `
-                        <div style="color: var(--error-red); text-align: center; padding: 20px;">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <p>Beklager! Noe gikk galt med bedriftsanalysen.</p>
-                            <p style="font-size: 14px; opacity: 0.8;">Prøv igjen om litt eller kontakt support.</p>
-                        </div>
-                    `;
+                    const webhookBox = document.getElementById('webhookResponse');
+                    const webhookOkText = webhookBox && webhookBox.textContent.includes('(OK)');
+                    if (webhookOkText) {
+                        content.innerHTML = `
+                            <div style="margin-top:10px;padding:12px;border:1px solid #cfe2ff;background:#e7f1ff;color:#084298;border-radius:6px;font-size:13px;">
+                                Analysen ble sendt inn og webhook svarte OK. Prøv å generere på nytt om et øyeblikk.
+                            </div>
+                        `;
+                    } else {
+                        content.innerHTML = `
+                            <div style="color: var(--error-red); text-align: center; padding: 20px;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p>Beklager! Noe gikk galt med bedriftsanalysen.</p>
+                                <p style="font-size: 14px; opacity: 0.8;">Prøv igjen om litt eller kontakt support.</p>
+                            </div>
+                        `;
+                    }
                     result.style.display = 'block';
                     AIKI.logger.error('Bedriftsanalyse generation error:', error);
                 } finally {
